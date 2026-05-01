@@ -559,7 +559,19 @@
       padding: 3px 8px;
       border: 1px solid var(--border-light);
       color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
     }
+
+    .cat-badge:hover { border-color: var(--green); color: var(--green); }
+
+    @keyframes catFlash {
+      0%   { background: var(--green); color: #000; border-color: var(--green); }
+      70%  { background: rgba(0,255,65,0.12); color: var(--green); border-color: var(--green); }
+      100% { background: transparent; color: var(--muted); border-color: var(--border-light); }
+    }
+
+    .cat-badge.cat-flash { animation: catFlash 0.85s ease-out forwards; }
 
     .pdf-badge {
       font-family: 'Space Mono', monospace;
@@ -594,6 +606,35 @@
       border-color: var(--red);
       color: var(--red);
       background: #150000;
+    }
+
+    /* ── DESCRIPTION ──────────────────────────────────────────────────── */
+    .resource-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .resource-desc:empty { display: none; }
+
+    /* ── PENDING STATE ────────────────────────────────────────────────── */
+    .resource-card.pending { opacity: 0.4; pointer-events: none; }
+
+    /* ── CATEGORY EDITOR DROPDOWN ─────────────────────────────────────── */
+    #cat-editor-dropdown {
+      position: fixed;
+      background: #101010;
+      border: 1px solid var(--border-light);
+      z-index: 500;
+      min-width: 190px;
+      max-height: 230px;
+      overflow-y: auto;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7);
     }
 
     /* ── CONFIRM DIALOG ───────────────────────────────────────────────── */
@@ -861,13 +902,14 @@
   ];
 
   // ── STATE ────────────────────────────────────────────────────────────
-  let allResources  = [];
-  let categories    = [...DEFAULT_CATEGORIES];
-  let activeFilter  = 'All';
-  let urlCategory   = '';
-  let pdfCategory   = '';
-  let pendingDelete = null;
-  let toastTimer    = null;
+  let allResources          = [];
+  let categories            = [...DEFAULT_CATEGORIES];
+  let activeFilter          = 'All';
+  let urlCategory           = '';
+  let pdfCategory           = '';
+  let pendingDelete         = null;
+  let toastTimer            = null;
+  let catEditorOutsideRef   = null;
 
   // ── AUTH ─────────────────────────────────────────────────────────────
   (function checkAuth() {
@@ -958,34 +1000,52 @@
 
     clearMsg(msgEl);
 
-    if (!urlVal)       { showMsg(msgEl, 'error', 'Enter a URL.'); return; }
-    if (!urlCategory)  { showMsg(msgEl, 'error', 'Select a category.'); return; }
+    if (!urlVal)      { showMsg(msgEl, 'error', 'Enter a URL.'); return; }
+    if (!urlCategory) { showMsg(msgEl, 'error', 'Select a category.'); return; }
 
     try { new URL(urlVal); }
     catch { showMsg(msgEl, 'error', 'Enter a valid URL — include https://'); return; }
+
+    // Optimistic: show pending card immediately
+    const tempId  = 'pending_' + Date.now();
+    const pending = {
+      id: tempId, url: urlVal, category: urlCategory,
+      added: new Date().toISOString(), source_type: 'url',
+      filename: '', description: '', _pending: true
+    };
+    allResources.unshift(pending);
+    renderResources();
 
     btn.disabled    = true;
     btn.textContent = '…';
 
     try {
       const result = await apiPost({
-        action:      'addResource',
-        url:         urlVal,
-        category:    urlCategory,
-        source_type: 'url'
+        action: 'addResource', url: urlVal,
+        category: urlCategory, source_type: 'url'
       });
       if (result.success) {
+        const idx = allResources.findIndex(r => r.id === tempId);
+        if (idx !== -1) {
+          allResources[idx] = {
+            id: result.id, url: urlVal, category: urlCategory,
+            added: new Date().toISOString(), source_type: 'url',
+            filename: '', description: result.description || ''
+          };
+        }
         input.value = '';
         urlCategory = '';
         resetTrigger('url-cat-trigger', 'Select category');
-        showMsg(msgEl, 'success', 'Resource added.');
-        await loadResources();
         renderResources();
         showToast('Resource added.');
       } else {
+        allResources = allResources.filter(r => r.id !== tempId);
+        renderResources();
         showMsg(msgEl, 'error', result.error || 'Failed to add resource.');
       }
     } catch {
+      allResources = allResources.filter(r => r.id !== tempId);
+      renderResources();
       showMsg(msgEl, 'error', 'Network error — try again.');
     } finally {
       btn.disabled    = false;
@@ -1036,6 +1096,16 @@
       return;
     }
 
+    // Optimistic: show pending card while upload runs
+    const descPreview = file.name.replace(/\.pdf$/i, '');
+    const tempId      = 'pending_' + Date.now();
+    allResources.unshift({
+      id: tempId, url: '#', category: pdfCategory,
+      added: new Date().toISOString(), source_type: 'pdf',
+      filename: file.name, description: descPreview, _pending: true
+    });
+    renderResources();
+
     btn.disabled    = true;
     btn.textContent = '…';
     progressWr.classList.add('visible');
@@ -1051,22 +1121,27 @@
       label.textContent = 'Uploading to Drive…';
 
       const result = await apiPost({
-        action:      'uploadPDF',
-        filename:    file.name,
-        mimeType:    file.type || 'application/pdf',
-        data:        base64,
-        category:    pdfCategory
+        action:   'uploadPDF',
+        filename: file.name,
+        mimeType: file.type || 'application/pdf',
+        data:     base64,
+        category: pdfCategory
       });
 
       fill.style.width = '100%';
 
       if (result.success) {
         label.textContent = 'Upload complete.';
-        setTimeout(() => {
-          progressWr.classList.remove('visible');
-          fill.style.width = '0%';
-        }, 1400);
+        setTimeout(() => { progressWr.classList.remove('visible'); fill.style.width = '0%'; }, 1400);
 
+        const idx = allResources.findIndex(r => r.id === tempId);
+        if (idx !== -1) {
+          allResources[idx] = {
+            id: result.id, url: result.url || '#', category: pdfCategory,
+            added: new Date().toISOString(), source_type: 'pdf',
+            filename: file.name, description: result.description || descPreview
+          };
+        }
         fileInput.value = '';
         const nameEl = document.getElementById('file-name-display');
         nameEl.textContent = 'Choose a file — max 10 MB';
@@ -1074,15 +1149,18 @@
         pdfCategory = '';
         resetTrigger('pdf-cat-trigger', 'Select category');
         showMsg(msgEl, 'success', 'PDF uploaded and added to library.');
-        await loadResources();
         renderResources();
         showToast('PDF uploaded.');
       } else {
         progressWr.classList.remove('visible');
+        allResources = allResources.filter(r => r.id !== tempId);
+        renderResources();
         showMsg(msgEl, 'error', result.error || 'Upload failed.');
       }
     } catch (err) {
       progressWr.classList.remove('visible');
+      allResources = allResources.filter(r => r.id !== tempId);
+      renderResources();
       showMsg(msgEl, 'error', 'Upload failed — try again.');
       console.error(err);
     } finally {
@@ -1118,17 +1196,25 @@
     if (!pendingDelete) return;
     const id = pendingDelete;
     closeDialog();
+
+    // Optimistic: remove immediately, restore on error
+    const removed = allResources.find(r => r.id === id);
+    allResources = allResources.filter(r => r.id !== id);
+    renderResources();
+
     try {
       const result = await apiPost({ action: 'deleteResource', id });
       if (result.success) {
-        allResources = allResources.filter(r => r.id !== id);
-        renderResources();
         showToast('Resource deleted.');
       } else {
-        showToast('Delete failed.');
+        if (removed) allResources.push(removed);
+        renderResources();
+        showToast('Delete failed — resource restored.');
       }
     } catch {
-      showToast('Network error — try again.');
+      if (removed) allResources.push(removed);
+      renderResources();
+      showToast('Network error — resource restored.');
     }
   }
 
@@ -1242,6 +1328,71 @@
     trigger.classList.remove('has-value');
   }
 
+  // ── CATEGORY EDITOR ──────────────────────────────────────────────────
+  function openCategoryEditor(badgeEl, resourceId) {
+    closeCategoryEditor();
+    const rect = badgeEl.getBoundingClientRect();
+    const dropdown = document.createElement('div');
+    dropdown.id = 'cat-editor-dropdown';
+    dropdown.style.top  = (rect.bottom + 4) + 'px';
+    dropdown.style.left = rect.left + 'px';
+
+    categories.forEach(cat => {
+      const opt = document.createElement('div');
+      opt.className = 'cat-option';
+      opt.textContent = cat;
+      opt.addEventListener('click', e => {
+        e.stopPropagation();
+        handleCategoryUpdate(resourceId, cat, badgeEl);
+        closeCategoryEditor();
+      });
+      dropdown.appendChild(opt);
+    });
+
+    // Stop any click inside the dropdown from bubbling to the close handler
+    dropdown.addEventListener('click', e => e.stopPropagation());
+    document.body.appendChild(dropdown);
+
+    catEditorOutsideRef = () => closeCategoryEditor();
+    setTimeout(() => document.addEventListener('click', catEditorOutsideRef), 0);
+  }
+
+  function closeCategoryEditor() {
+    const el = document.getElementById('cat-editor-dropdown');
+    if (el) el.remove();
+    if (catEditorOutsideRef) {
+      document.removeEventListener('click', catEditorOutsideRef);
+      catEditorOutsideRef = null;
+    }
+  }
+
+  async function handleCategoryUpdate(id, newCategory, badgeEl) {
+    const resource = allResources.find(r => r.id === id);
+    if (!resource) return;
+    const oldCategory = resource.category;
+
+    // Optimistic update in place — no full re-render needed
+    resource.category    = newCategory;
+    badgeEl.textContent  = newCategory;
+    badgeEl.classList.remove('cat-flash');
+    void badgeEl.offsetWidth; // force reflow so animation restarts if triggered twice
+    badgeEl.classList.add('cat-flash');
+    setTimeout(() => badgeEl.classList.remove('cat-flash'), 900);
+
+    try {
+      const result = await apiPost({ action: 'updateCategory', id, category: newCategory });
+      if (!result.success) {
+        resource.category   = oldCategory;
+        badgeEl.textContent = oldCategory;
+        showToast('Failed to update category.');
+      }
+    } catch {
+      resource.category   = oldCategory;
+      badgeEl.textContent = oldCategory;
+      showToast('Network error — category not saved.');
+    }
+  }
+
   // Dropdown open/close toggle
   ['url-cat-wrap', 'pdf-cat-wrap'].forEach(id => {
     const wrap    = document.getElementById(id);
@@ -1282,6 +1433,7 @@
   }
 
   function renderResources() {
+    closeCategoryEditor();
     const listEl  = document.getElementById('resource-list');
     const countEl = document.getElementById('resource-count');
 
@@ -1310,21 +1462,31 @@
       const hrefUrl     = safeUrl(r.url);
 
       const card = document.createElement('div');
-      card.className = 'resource-card';
+      card.className = 'resource-card' + (r._pending ? ' pending' : '');
+      card.dataset.id = r.id;
+
       card.innerHTML =
         '<div class="resource-main">' +
           '<a class="resource-url" href="' + hrefUrl + '" target="_blank" rel="noopener noreferrer" title="' + escHtml(r.url) + '">' +
             displayText +
           '</a>' +
+          (r.description ? '<div class="resource-desc">' + escHtml(r.description) + '</div>' : '') +
           '<div class="resource-meta">' +
-            '<span class="cat-badge">' + escHtml(r.category) + '</span>' +
+            '<span class="cat-badge" title="Click to change category">' + escHtml(r.category) + '</span>' +
             (isPDF ? '<span class="pdf-badge">PDF</span>' : '') +
             '<span class="resource-date">' + fmtDate(r.added) + '</span>' +
           '</div>' +
         '</div>' +
         '<button class="delete-btn" title="Delete resource">✕</button>';
 
-      card.querySelector('.delete-btn').addEventListener('click', () => promptDelete(r.id));
+      if (!r._pending) {
+        const badge = card.querySelector('.cat-badge');
+        badge.addEventListener('click', e => {
+          e.stopPropagation();
+          openCategoryEditor(badge, r.id);
+        });
+        card.querySelector('.delete-btn').addEventListener('click', () => promptDelete(r.id));
+      }
       listEl.appendChild(card);
     });
   }

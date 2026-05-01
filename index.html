@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D4BL Resource Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green:        #00ff41;
+      --green-hover:  #33ff66;
+      --bg:           #000000;
+      --card-bg:      #080808;
+      --input-bg:     #0d0d0d;
+      --border:       #1a2a1a;
+      --border-light: #2a3a2a;
+      --text:         #ffffff;
+      --muted:        #888888;
+      --red:          #ff4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── PASSWORD SCREEN ─────────────────────────────────────────────── */
+    #password-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .pw-card {
+      border: 1px solid var(--green);
+      padding: 48px 40px;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .pw-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .pw-title {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 32px;
+    }
+
+    .pw-title span { color: var(--green); }
+
+    .pw-input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border-light);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      padding: 13px 16px;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .pw-input:focus { border-color: var(--green); }
+    .pw-input::placeholder { color: var(--muted); }
+
+    .pw-btn {
+      width: 100%;
+      background: var(--green);
+      color: #000;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      border: none;
+      padding: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .pw-btn:hover { background: var(--green-hover); }
+
+    .pw-error {
+      margin-top: 12px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--red);
+      display: none;
+    }
+
+    /* ── MAIN APP ─────────────────────────────────────────────────────── */
+    #app {
+      display: none;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 96px;
+    }
+
+    /* ── SETUP BANNER ─────────────────────────────────────────────────── */
+    #setup-banner {
+      display: none;
+      background: #0a180a;
+      border: 1px solid var(--green);
+      border-top: none;
+      padding: 14px 20px;
+    }
+
+    .setup-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--green);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── HEADER ───────────────────────────────────────────────────────── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 36px 0 26px;
+      margin-bottom: 44px;
+    }
+
+    .header-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .header-title {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .header-title span { color: var(--green); }
+
+    .header-sub {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+
+    /* ── SECTION LABEL ────────────────────────────────────────────────── */
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    /* ── ADD RESOURCE ─────────────────────────────────────────────────── */
+    #add-section {
+      border: 1px solid var(--border);
+      padding: 28px;
+      margin-bottom: 48px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .input-row input[type="url"] {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border-light);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      min-width: 0;
+    }
+
+    .input-row input[type="url"]:focus { border-color: var(--green); }
+    .input-row input[type="url"]::placeholder { color: var(--muted); }
+
+    /* ── CUSTOM CATEGORY SELECT ───────────────────────────────────────── */
+    .cat-select-wrap {
+      position: relative;
+      flex-shrink: 0;
+      width: 196px;
+    }
+
+    .cat-select-trigger {
+      width: 100%;
+      height: 100%;
+      min-height: 44px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-light);
+      color: var(--muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      padding: 0 32px 0 14px;
+      cursor: pointer;
+      text-align: left;
+      position: relative;
+      display: flex;
+      align-items: center;
+      transition: border-color 0.15s, color 0.15s;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .cat-select-trigger.has-value { color: var(--text); }
+
+    .cat-select-trigger:hover,
+    .cat-select-wrap.open .cat-select-trigger { border-color: var(--green); }
+
+    .cat-arrow {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--green);
+      font-size: 11px;
+      pointer-events: none;
+    }
+
+    .cat-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 2px);
+      left: 0;
+      right: 0;
+      background: #101010;
+      border: 1px solid var(--border-light);
+      z-index: 200;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .cat-select-wrap.open .cat-dropdown { display: block; }
+
+    .cat-option {
+      padding: 9px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .cat-option:hover { background: var(--border-light); color: var(--green); }
+    .cat-option.selected { color: var(--green); font-weight: 600; }
+
+    .cat-new-row {
+      padding: 9px 14px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--green);
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+      letter-spacing: 0.05em;
+      transition: background 0.1s;
+    }
+
+    .cat-new-row:hover { background: var(--border-light); }
+
+    .cat-new-input-wrap {
+      display: none;
+      padding: 8px 10px;
+      gap: 6px;
+      border-top: 1px solid var(--border);
+    }
+
+    .cat-new-input-wrap.visible { display: flex; }
+
+    .cat-new-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border-light);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      padding: 6px 8px;
+      outline: none;
+      min-width: 0;
+    }
+
+    .cat-new-input:focus { border-color: var(--green); }
+
+    .cat-new-confirm {
+      background: var(--green);
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      border: none;
+      padding: 6px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .cat-new-confirm:hover { background: var(--green-hover); }
+
+    /* ── ACTION BUTTON ────────────────────────────────────────────────── */
+    .action-btn {
+      background: var(--green);
+      color: #000;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      border: none;
+      padding: 0 22px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-height: 44px;
+    }
+
+    .action-btn:hover { background: var(--green-hover); }
+    .action-btn:disabled { background: #1a2a1a; color: var(--muted); cursor: not-allowed; }
+
+    /* ── OR DIVIDER ───────────────────────────────────────────────────── */
+    .or-divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .or-divider::before,
+    .or-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .or-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── FILE ROW ─────────────────────────────────────────────────────── */
+    .file-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .file-label {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border-light);
+      padding: 11px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: border-color 0.15s;
+      min-width: 0;
+      min-height: 44px;
+    }
+
+    .file-label:hover { border-color: var(--green); }
+
+    .file-label input[type="file"] { display: none; }
+
+    .file-icon {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 0.06em;
+      border: 1px solid var(--green);
+      padding: 2px 5px;
+      flex-shrink: 0;
+    }
+
+    .file-name-display {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+
+    .file-name-display.has-file { color: var(--text); }
+
+    /* ── PROGRESS ─────────────────────────────────────────────────────── */
+    .progress-wrap {
+      display: none;
+      margin-top: 14px;
+    }
+
+    .progress-wrap.visible { display: block; }
+
+    .progress-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .progress-bar {
+      height: 2px;
+      background: var(--border-light);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--green);
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    /* ── INLINE MESSAGES ──────────────────────────────────────────────── */
+    .inline-msg {
+      display: none;
+      margin-top: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.03em;
+    }
+
+    .inline-msg.error   { display: block; color: var(--red); }
+    .inline-msg.success { display: block; color: var(--green); }
+
+    /* ── FILTER ───────────────────────────────────────────────────────── */
+    #filter-section { margin-bottom: 36px; }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .filter-pill {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border: 1px solid var(--border-light);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-pill:hover { border-color: var(--green); color: var(--green); }
+
+    .filter-pill.active {
+      background: var(--green);
+      color: #000;
+      border-color: var(--green);
+      font-weight: 700;
+    }
+
+    /* ── RESOURCE LIST ────────────────────────────────────────────────── */
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .resource-count {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    #resource-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .state-msg {
+      padding: 56px 0;
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── RESOURCE CARD ────────────────────────────────────────────────── */
+    .resource-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      transition: border-color 0.15s;
+    }
+
+    .resource-card:hover { border-color: var(--border-light); }
+
+    .resource-main { min-width: 0; }
+
+    .resource-url {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--green);
+      text-decoration: none;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 9px;
+      transition: color 0.15s;
+    }
+
+    .resource-url:hover { color: var(--green-hover); text-decoration: underline; }
+
+    .resource-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .cat-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border: 1px solid var(--border-light);
+      color: var(--muted);
+    }
+
+    .pdf-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      background: var(--green);
+      color: #000;
+    }
+
+    .resource-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: 1px solid #2a1a1a;
+      color: #4a3333;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 7px 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .delete-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: #150000;
+    }
+
+    /* ── CONFIRM DIALOG ───────────────────────────────────────────────── */
+    #dialog-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    #dialog-overlay.visible { display: flex; }
+
+    .dialog-box {
+      background: var(--bg);
+      border: 1px solid var(--green);
+      padding: 32px;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .dialog-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .dialog-body {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 26px;
+      line-height: 1.55;
+    }
+
+    .dialog-actions { display: flex; gap: 10px; }
+
+    .dialog-cancel {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--border-light);
+      color: var(--muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .dialog-cancel:hover { border-color: var(--text); color: var(--text); }
+
+    .dialog-confirm {
+      flex: 1;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 11px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .dialog-confirm:hover { background: #ff6666; }
+
+    /* ── TOAST ────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--green);
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 12px 20px;
+      z-index: 2000;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+    }
+
+    #toast.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── FOOTER ───────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0;
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin-top: 72px;
+    }
+
+    /* ── MOBILE ───────────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      #app { padding: 0 16px 72px; }
+
+      .pw-card { padding: 36px 24px; }
+
+      .header-title { font-size: 26px; }
+
+      #add-section { padding: 20px 16px; }
+
+      .input-row  { flex-direction: column; }
+      .file-row   { flex-direction: column; }
+
+      .cat-select-wrap { width: 100%; }
+
+      .cat-select-trigger { min-height: 44px; }
+
+      .action-btn { min-height: 48px; }
+
+      .resource-card { padding: 14px 16px; gap: 12px; }
+
+      .resource-url { font-size: 11px; }
+
+      #toast { right: 16px; bottom: 20px; left: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── PASSWORD SCREEN ──────────────────────────────────────────────── -->
+<div id="password-screen">
+  <div class="pw-card">
+    <div class="pw-eyebrow">Access Required</div>
+    <div class="pw-title">D4BL<br><span>Resource Library</span></div>
+    <form id="pw-form">
+      <input
+        id="pw-input"
+        type="password"
+        class="pw-input"
+        placeholder="Enter password"
+        autocomplete="current-password"
+        autofocus
+      >
+      <button type="submit" class="pw-btn">Enter</button>
+    </form>
+    <div class="pw-error" id="pw-error">Incorrect password — try again.</div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ──────────────────────────────────────────────────────── -->
+<div id="app">
+
+  <div id="setup-banner">
+    <div class="setup-text">
+      &#9888; BACKEND NOT CONNECTED &mdash; Replace APPS_SCRIPT_URL in the source with your deployed Apps Script URL, then redeploy to GitHub Pages.
+    </div>
+  </div>
+
+  <header>
+    <div class="header-eyebrow">Data for Black Lives</div>
+    <div class="header-title">D4BL <span>Resource Library</span></div>
+    <div class="header-sub">Linked Data &middot; Open Access &middot; Black Cultural Heritage &middot; Digital Infrastructure</div>
+  </header>
+
+  <main>
+
+    <!-- ADD RESOURCE ─────────────────────────────────────────────────── -->
+    <section id="add-section">
+      <div class="section-label">Add Resource</div>
+
+      <!-- URL row -->
+      <div class="input-row">
+        <input type="url" id="url-input" placeholder="https://example.com/article-or-report">
+        <div class="cat-select-wrap" id="url-cat-wrap">
+          <button type="button" class="cat-select-trigger" id="url-cat-trigger">
+            Select category
+            <span class="cat-arrow">&#9660;</span>
+          </button>
+          <div class="cat-dropdown" id="url-cat-dropdown"></div>
+        </div>
+        <button class="action-btn" id="add-url-btn" onclick="handleAddUrl()">Add</button>
+      </div>
+      <div class="inline-msg" id="url-msg"></div>
+
+      <!-- OR divider -->
+      <div class="or-divider">
+        <span class="or-text">Or upload PDF</span>
+      </div>
+
+      <!-- PDF row -->
+      <div class="file-row">
+        <label class="file-label">
+          <span class="file-icon">PDF</span>
+          <span class="file-name-display" id="file-name-display">Choose a file &mdash; max 10 MB</span>
+          <input type="file" id="pdf-input" accept=".pdf,application/pdf">
+        </label>
+        <div class="cat-select-wrap" id="pdf-cat-wrap">
+          <button type="button" class="cat-select-trigger" id="pdf-cat-trigger">
+            Select category
+            <span class="cat-arrow">&#9660;</span>
+          </button>
+          <div class="cat-dropdown" id="pdf-cat-dropdown"></div>
+        </div>
+        <button class="action-btn" id="upload-pdf-btn" onclick="handleUploadPdf()">Upload</button>
+      </div>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-label" id="progress-label">Uploading&hellip;</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+      <div class="inline-msg" id="pdf-msg"></div>
+    </section>
+
+    <!-- FILTER ───────────────────────────────────────────────────────── -->
+    <section id="filter-section">
+      <div class="section-label">Filter by Category</div>
+      <div class="filter-row" id="filter-row"></div>
+    </section>
+
+    <!-- RESOURCE LIST ────────────────────────────────────────────────── -->
+    <section>
+      <div class="list-header">
+        <div class="section-label" style="margin-bottom:0">Resources</div>
+        <div class="resource-count" id="resource-count"></div>
+      </div>
+      <div id="resource-list">
+        <div class="state-msg">Loading resources&hellip;</div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>For internal use only &mdash; Data for Black Lives project team</footer>
+</div>
+
+<!-- ── CONFIRM DIALOG ───────────────────────────────────────────────── -->
+<div id="dialog-overlay">
+  <div class="dialog-box">
+    <div class="dialog-title">Delete this resource?</div>
+    <div class="dialog-body">This will permanently remove the resource from the library. It cannot be undone.</div>
+    <div class="dialog-actions">
+      <button class="dialog-cancel" onclick="closeDialog()">Cancel</button>
+      <button class="dialog-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ────────────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+  // ── CONFIG ──────────────────────────────────────────────────────────
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwJFWUi83JUnFhYwUIn-5t_fOe3E5SsweWuooYUksgfVY6duCaGTky2q4-5zoaVooztNA/exec';
+  const PASSWORD        = 'd4bl2026!!!';
+  const AUTH_KEY        = 'd4bl_auth_expiry';
+  const AUTH_DURATION   = 30 * 24 * 60 * 60 * 1000; // 30 days
+  const MAX_FILE_BYTES  = 10 * 1024 * 1024;          // 10 MB
+
+  const DEFAULT_CATEGORIES = [
+    'Linked Data', 'Open Access', 'Metadata', 'Copyright & Legal',
+    'Ontology & Classification', 'Black Cultural Heritage',
+    'Digital Humanities', 'Case Studies', 'Other'
+  ];
+
+  // ── STATE ────────────────────────────────────────────────────────────
+  let allResources  = [];
+  let categories    = [...DEFAULT_CATEGORIES];
+  let activeFilter  = 'All';
+  let urlCategory   = '';
+  let pdfCategory   = '';
+  let pendingDelete = null;
+  let toastTimer    = null;
+
+  // ── AUTH ─────────────────────────────────────────────────────────────
+  (function checkAuth() {
+    const expiry = localStorage.getItem(AUTH_KEY);
+    if (expiry && Date.now() < parseInt(expiry, 10)) showApp();
+  })();
+
+  document.getElementById('pw-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('pw-input');
+    const error = document.getElementById('pw-error');
+    if (input.value === PASSWORD) {
+      localStorage.setItem(AUTH_KEY, String(Date.now() + AUTH_DURATION));
+      error.style.display = 'none';
+      showApp();
+    } else {
+      error.style.display = 'block';
+      input.value = '';
+      input.focus();
+    }
+  });
+
+  function showApp() {
+    document.getElementById('password-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+      document.getElementById('setup-banner').style.display = 'block';
+      renderAll();
+    } else {
+      init();
+    }
+  }
+
+  // ── API ──────────────────────────────────────────────────────────────
+  async function apiGet(params) {
+    const u = new URL(APPS_SCRIPT_URL);
+    Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
+    const res = await fetch(u.toString(), { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  async function apiPost(data) {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:   'POST',
+      headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:     JSON.stringify(data),
+      redirect: 'follow'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  // ── DATA ─────────────────────────────────────────────────────────────
+  async function loadResources() {
+    try {
+      const data = await apiGet({ action: 'getResources' });
+      allResources = Array.isArray(data.resources) ? data.resources : [];
+    } catch {
+      allResources = [];
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const data   = await apiGet({ action: 'getCategories' });
+      const custom = Array.isArray(data.categories) ? data.categories : [];
+      const merged = [...DEFAULT_CATEGORIES];
+      custom.forEach(c => { if (c && !merged.includes(c)) merged.push(c); });
+      categories = merged;
+    } catch {
+      categories = [...DEFAULT_CATEGORIES];
+    }
+  }
+
+  async function init() {
+    setListMsg('Loading resources…');
+    await Promise.all([loadCategories(), loadResources()]);
+    renderAll();
+  }
+
+  // ── ADD URL ──────────────────────────────────────────────────────────
+  async function handleAddUrl() {
+    const input  = document.getElementById('url-input');
+    const btn    = document.getElementById('add-url-btn');
+    const msgEl  = document.getElementById('url-msg');
+    const urlVal = input.value.trim();
+
+    clearMsg(msgEl);
+
+    if (!urlVal)       { showMsg(msgEl, 'error', 'Enter a URL.'); return; }
+    if (!urlCategory)  { showMsg(msgEl, 'error', 'Select a category.'); return; }
+
+    try { new URL(urlVal); }
+    catch { showMsg(msgEl, 'error', 'Enter a valid URL — include https://'); return; }
+
+    btn.disabled    = true;
+    btn.textContent = '…';
+
+    try {
+      const result = await apiPost({
+        action:      'addResource',
+        url:         urlVal,
+        category:    urlCategory,
+        source_type: 'url'
+      });
+      if (result.success) {
+        input.value = '';
+        urlCategory = '';
+        resetTrigger('url-cat-trigger', 'Select category');
+        showMsg(msgEl, 'success', 'Resource added.');
+        await loadResources();
+        renderResources();
+        showToast('Resource added.');
+      } else {
+        showMsg(msgEl, 'error', result.error || 'Failed to add resource.');
+      }
+    } catch {
+      showMsg(msgEl, 'error', 'Network error — try again.');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Add';
+    }
+  }
+
+  // ── UPLOAD PDF ───────────────────────────────────────────────────────
+  document.getElementById('pdf-input').addEventListener('change', function() {
+    const nameEl = document.getElementById('file-name-display');
+    const msgEl  = document.getElementById('pdf-msg');
+    clearMsg(msgEl);
+    if (!this.files.length) {
+      nameEl.textContent = 'Choose a file — max 10 MB';
+      nameEl.classList.remove('has-file');
+      return;
+    }
+    const file = this.files[0];
+    if (file.size > MAX_FILE_BYTES) {
+      showMsg(msgEl, 'error',
+        'File is ' + (file.size / 1024 / 1024).toFixed(1) + ' MB — max is 10 MB.');
+      this.value = '';
+      nameEl.textContent = 'Choose a file — max 10 MB';
+      nameEl.classList.remove('has-file');
+      return;
+    }
+    nameEl.textContent = file.name;
+    nameEl.classList.add('has-file');
+  });
+
+  async function handleUploadPdf() {
+    const fileInput  = document.getElementById('pdf-input');
+    const btn        = document.getElementById('upload-pdf-btn');
+    const msgEl      = document.getElementById('pdf-msg');
+    const progressWr = document.getElementById('progress-wrap');
+    const fill       = document.getElementById('progress-fill');
+    const label      = document.getElementById('progress-label');
+
+    clearMsg(msgEl);
+
+    if (!fileInput.files.length) { showMsg(msgEl, 'error', 'Choose a PDF file.'); return; }
+    if (!pdfCategory)            { showMsg(msgEl, 'error', 'Select a category.'); return; }
+
+    const file = fileInput.files[0];
+    if (file.size > MAX_FILE_BYTES) {
+      showMsg(msgEl, 'error',
+        'File too large (' + (file.size / 1024 / 1024).toFixed(1) + ' MB). Max is 10 MB.');
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = '…';
+    progressWr.classList.add('visible');
+    fill.style.width = '0%';
+    label.textContent = 'Reading file…';
+
+    try {
+      const base64 = await readAsBase64(file, pct => {
+        fill.style.width = (pct * 35).toFixed(0) + '%';
+      });
+
+      fill.style.width  = '40%';
+      label.textContent = 'Uploading to Drive…';
+
+      const result = await apiPost({
+        action:      'uploadPDF',
+        filename:    file.name,
+        mimeType:    file.type || 'application/pdf',
+        data:        base64,
+        category:    pdfCategory
+      });
+
+      fill.style.width = '100%';
+
+      if (result.success) {
+        label.textContent = 'Upload complete.';
+        setTimeout(() => {
+          progressWr.classList.remove('visible');
+          fill.style.width = '0%';
+        }, 1400);
+
+        fileInput.value = '';
+        const nameEl = document.getElementById('file-name-display');
+        nameEl.textContent = 'Choose a file — max 10 MB';
+        nameEl.classList.remove('has-file');
+        pdfCategory = '';
+        resetTrigger('pdf-cat-trigger', 'Select category');
+        showMsg(msgEl, 'success', 'PDF uploaded and added to library.');
+        await loadResources();
+        renderResources();
+        showToast('PDF uploaded.');
+      } else {
+        progressWr.classList.remove('visible');
+        showMsg(msgEl, 'error', result.error || 'Upload failed.');
+      }
+    } catch (err) {
+      progressWr.classList.remove('visible');
+      showMsg(msgEl, 'error', 'Upload failed — try again.');
+      console.error(err);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Upload';
+    }
+  }
+
+  function readAsBase64(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onprogress = e => {
+        if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
+      };
+      reader.onload  = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = () => reject(new Error('File read error'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── DELETE ───────────────────────────────────────────────────────────
+  function promptDelete(id) {
+    pendingDelete = id;
+    document.getElementById('dialog-overlay').classList.add('visible');
+  }
+
+  function closeDialog() {
+    pendingDelete = null;
+    document.getElementById('dialog-overlay').classList.remove('visible');
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const id = pendingDelete;
+    closeDialog();
+    try {
+      const result = await apiPost({ action: 'deleteResource', id });
+      if (result.success) {
+        allResources = allResources.filter(r => r.id !== id);
+        renderResources();
+        showToast('Resource deleted.');
+      } else {
+        showToast('Delete failed.');
+      }
+    } catch {
+      showToast('Network error — try again.');
+    }
+  }
+
+  // Close dialog on overlay click
+  document.getElementById('dialog-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeDialog();
+  });
+
+  // ── ADD CATEGORY ─────────────────────────────────────────────────────
+  async function addCategory(name) {
+    const trimmed = name.trim();
+    if (!trimmed || categories.includes(trimmed)) return trimmed || null;
+    categories.push(trimmed);
+    try {
+      if (APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+        await apiPost({ action: 'addCategory', name: trimmed });
+      }
+    } catch {
+      // category added locally even if network fails
+    }
+    renderFilters();
+    rebuildDropdowns(urlCategory, pdfCategory);
+    return trimmed;
+  }
+
+  // ── CUSTOM DROPDOWN ──────────────────────────────────────────────────
+  function buildDropdown(dropdownEl, triggerId, currentValue, onSelect) {
+    dropdownEl.innerHTML = '';
+
+    categories.forEach(cat => {
+      const opt = document.createElement('div');
+      opt.className = 'cat-option' + (cat === currentValue ? ' selected' : '');
+      opt.textContent = cat;
+      opt.addEventListener('click', () => {
+        onSelect(cat);
+        const trigger = document.getElementById(triggerId);
+        trigger.childNodes[0].textContent = cat + ' ';
+        trigger.classList.add('has-value');
+        dropdownEl.closest('.cat-select-wrap').classList.remove('open');
+      });
+      dropdownEl.appendChild(opt);
+    });
+
+    // + New category row
+    const newRow = document.createElement('div');
+    newRow.className = 'cat-new-row';
+    newRow.innerHTML = '+ New category';
+    dropdownEl.appendChild(newRow);
+
+    const inputWrap = document.createElement('div');
+    inputWrap.className = 'cat-new-input-wrap';
+    const newInput = document.createElement('input');
+    newInput.className = 'cat-new-input';
+    newInput.type = 'text';
+    newInput.placeholder = 'Category name';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'cat-new-confirm';
+    confirmBtn.textContent = 'Add';
+    inputWrap.appendChild(newInput);
+    inputWrap.appendChild(confirmBtn);
+    dropdownEl.appendChild(inputWrap);
+
+    // Prevent clicks inside dropdown from bubbling to document close handler
+    inputWrap.addEventListener('click', e => e.stopPropagation());
+
+    newRow.addEventListener('click', e => {
+      e.stopPropagation();
+      newRow.style.display = 'none';
+      inputWrap.classList.add('visible');
+      newInput.focus();
+    });
+
+    async function doAddCategory() {
+      const name = newInput.value.trim();
+      if (!name) return;
+      const added = await addCategory(name);
+      if (added) {
+        onSelect(added);
+        const trigger = document.getElementById(triggerId);
+        trigger.childNodes[0].textContent = added + ' ';
+        trigger.classList.add('has-value');
+        dropdownEl.closest('.cat-select-wrap').classList.remove('open');
+        newInput.value = '';
+        inputWrap.classList.remove('visible');
+        newRow.style.display = '';
+      }
+    }
+
+    confirmBtn.addEventListener('click', doAddCategory);
+    newInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAddCategory(); } });
+  }
+
+  function rebuildDropdowns(keepUrl, keepPdf) {
+    buildDropdown(
+      document.getElementById('url-cat-dropdown'),
+      'url-cat-trigger',
+      keepUrl || urlCategory,
+      cat => { urlCategory = cat; }
+    );
+    buildDropdown(
+      document.getElementById('pdf-cat-dropdown'),
+      'pdf-cat-trigger',
+      keepPdf || pdfCategory,
+      cat => { pdfCategory = cat; }
+    );
+  }
+
+  function resetTrigger(triggerId, placeholder) {
+    const trigger = document.getElementById(triggerId);
+    trigger.childNodes[0].textContent = placeholder + ' ';
+    trigger.classList.remove('has-value');
+  }
+
+  // Dropdown open/close toggle
+  ['url-cat-wrap', 'pdf-cat-wrap'].forEach(id => {
+    const wrap    = document.getElementById(id);
+    const trigger = wrap.querySelector('.cat-select-trigger');
+    trigger.addEventListener('click', e => {
+      e.stopPropagation();
+      const wasOpen = wrap.classList.contains('open');
+      document.querySelectorAll('.cat-select-wrap.open').forEach(w => w.classList.remove('open'));
+      if (!wasOpen) wrap.classList.add('open');
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.cat-select-wrap.open').forEach(w => w.classList.remove('open'));
+  });
+
+  // ── RENDERING ────────────────────────────────────────────────────────
+  function renderAll() {
+    renderFilters();
+    rebuildDropdowns();
+    renderResources();
+  }
+
+  function renderFilters() {
+    const row  = document.getElementById('filter-row');
+    row.innerHTML = '';
+    ['All', ...categories].forEach(cat => {
+      const pill = document.createElement('button');
+      pill.className = 'filter-pill' + (cat === activeFilter ? ' active' : '');
+      pill.textContent = cat;
+      pill.addEventListener('click', () => {
+        activeFilter = cat;
+        renderFilters();
+        renderResources();
+      });
+      row.appendChild(pill);
+    });
+  }
+
+  function renderResources() {
+    const listEl  = document.getElementById('resource-list');
+    const countEl = document.getElementById('resource-count');
+
+    const filtered = activeFilter === 'All'
+      ? allResources
+      : allResources.filter(r => r.category === activeFilter);
+
+    const sorted = [...filtered].sort((a, b) => new Date(b.added) - new Date(a.added));
+
+    countEl.textContent = filtered.length
+      ? filtered.length + ' resource' + (filtered.length !== 1 ? 's' : '')
+      : '';
+
+    listEl.innerHTML = '';
+
+    if (!sorted.length) {
+      listEl.innerHTML = '<div class="state-msg">' +
+        (allResources.length ? 'No resources in this category.' : 'No resources yet — add one above.') +
+        '</div>';
+      return;
+    }
+
+    sorted.forEach(r => {
+      const isPDF       = r.source_type === 'pdf';
+      const displayText = escHtml(isPDF ? (r.filename || 'PDF Document') : r.url);
+      const hrefUrl     = safeUrl(r.url);
+
+      const card = document.createElement('div');
+      card.className = 'resource-card';
+      card.innerHTML =
+        '<div class="resource-main">' +
+          '<a class="resource-url" href="' + hrefUrl + '" target="_blank" rel="noopener noreferrer" title="' + escHtml(r.url) + '">' +
+            displayText +
+          '</a>' +
+          '<div class="resource-meta">' +
+            '<span class="cat-badge">' + escHtml(r.category) + '</span>' +
+            (isPDF ? '<span class="pdf-badge">PDF</span>' : '') +
+            '<span class="resource-date">' + fmtDate(r.added) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<button class="delete-btn" title="Delete resource">✕</button>';
+
+      card.querySelector('.delete-btn').addEventListener('click', () => promptDelete(r.id));
+      listEl.appendChild(card);
+    });
+  }
+
+  // ── HELPERS ──────────────────────────────────────────────────────────
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function safeUrl(url) {
+    try {
+      const u = new URL(url);
+      if (u.protocol === 'http:' || u.protocol === 'https:') return escHtml(url);
+    } catch {}
+    return '#';
+  }
+
+  function fmtDate(str) {
+    if (!str) return '';
+    try {
+      return new Date(str).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    } catch { return str; }
+  }
+
+  function setListMsg(msg) {
+    document.getElementById('resource-list').innerHTML =
+      '<div class="state-msg">' + msg + '</div>';
+    document.getElementById('resource-count').textContent = '';
+  }
+
+  function showMsg(el, type, text) {
+    el.className    = 'inline-msg ' + type;
+    el.textContent  = text;
+  }
+
+  function clearMsg(el) {
+    el.className   = 'inline-msg';
+    el.textContent = '';
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('visible'), 2600);
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────────
+  // Dropdowns need to exist before auth check in case showApp() is called immediately
+  rebuildDropdowns();
+</script>
+
+</body>
+</html>
